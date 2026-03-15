@@ -1,65 +1,146 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import RegionCard from "@/components/dashboard/RegionCard";
+import PageShell from "@/components/layout/PageShell";
+import { getAllRegions, getRegionAnalysis } from "@/lib/services/regionService";
+import type { Region, RegionAnalysis } from "@/lib/types";
+import dynamic from "next/dynamic";
+import { useEffect, useState } from "react";
+
+const RegionMap = dynamic(
+  () => import("@/components/dashboard/RegionMap"),
+  {
+    ssr: false,
+    loading: () => <MapSkeleton />,
+  }
+);
+
+export default function HomePage() {
+  const [regions, setRegions] = useState<Region[]>([]);
+  const [analyses, setAnalyses] = useState<Record<string, RegionAnalysis>>({});
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function load() {
+      const regionList = await getAllRegions();
+      setRegions(regionList);
+
+      const analysisEntries = await Promise.all(
+        regionList.map(async (r) => {
+          const analysis = await getRegionAnalysis(r.slug);
+          return [r.slug, analysis] as const;
+        })
+      );
+
+      const analysisMap: Record<string, RegionAnalysis> = {};
+      for (const [slug, analysis] of analysisEntries) {
+        if (analysis) {
+          analysisMap[slug] = analysis;
+        }
+      }
+      setAnalyses(analysisMap);
+      setLoading(false);
+    }
+    load();
+  }, []);
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <PageShell>
+      {/* ─── Page Header ───────────────────────────── */}
+      <div className="mb-12 max-w-3xl">
+        <h1 className="font-serif text-4xl md:text-5xl lg:text-4xl tracking-tight mb-4 leading-tight text-foreground">
+          UK Property Investment Analysis
+        </h1>
+        <p className="font-sans text-base text-muted-foreground text-balance mb-6 leading-relaxed">
+          Transparent, explainable assessments of residential investment conditions across regions to help you make informed decisions.
+        </p>
+
+        <div className="flex flex-wrap items-center gap-3 text-xs font-mono text-muted-foreground">
+          <span className="flex items-center gap-2 px-3 py-1.5 bg-card border border-border rounded-full">
+            <DotIcon /> 8 Regions
+          </span>
+          <span className="flex items-center gap-2 px-3 py-1.5 bg-card border border-border rounded-full">
+            <DotIcon /> Last updated: 2024
+          </span>
+          <span className="flex items-center gap-2 px-3 py-1.5 bg-card border border-border rounded-full">
+            <DotIcon /> Data: ONS
+          </span>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+      </div>
+
+      {/* ─── Two Column Layout ─────────────────────── */}
+      <div className="flex flex-col lg:flex-row gap-8">
+        {/* ─── Left: Map ─────────────────────────── */}
+        <div className="w-full lg:w-[45%] shrink-0">
+          <div className="bg-card border border-border rounded-lg overflow-hidden sticky top-24 h-125 lg:h-155">
+            <RegionMap />
+          </div>
         </div>
-      </main>
+
+        {/* ─── Right: Region Cards ───────────────── */}
+        <div className="flex-1 w-full">
+          {loading ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              {Array.from({ length: 8 }).map((_, i) => (
+                <CardSkeleton key={i} />
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              {regions.map((region, i) => (
+                <RegionCard
+                  key={region.slug}
+                  region={region}
+                  analysis={analyses[region.slug]}
+                  index={i}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </PageShell>
+  );
+}
+
+/* ─── Skeleton Components ──────────────────────────────────────── */
+
+function MapSkeleton() {
+  return (
+    <div className="w-full h-full bg-muted animate-pulse inset-0 absolute" />
+  );
+}
+
+function CardSkeleton() {
+  return (
+    <div className="bg-card border border-border rounded-lg p-6 h-full flex flex-col justify-between">
+      <div>
+        <div className="flex justify-between mb-4">
+          <div className="h-6 w-32 bg-muted rounded-lg animate-pulse" />
+          <div className="h-6 w-16 bg-muted rounded-full animate-pulse" />
+        </div>
+        <div className="flex items-end gap-3 mb-8">
+          <div className="h-10 w-16 bg-muted rounded-lg animate-pulse" />
+          <div className="h-4 w-10 bg-muted rounded-lg pb-1 animate-pulse" />
+          <div className="h-6 w-14 bg-muted rounded-lg ml-auto animate-pulse" />
+        </div>
+      </div>
+      <div className="grid grid-cols-3 gap-3 pt-4 border-t border-border mt-auto">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <div key={i} className="flex flex-col gap-2">
+            <div className="h-3 w-16 bg-muted rounded animate-pulse" />
+            <div className="h-4 w-12 bg-muted rounded animate-pulse" />
+          </div>
+        ))}
+      </div>
     </div>
+  );
+}
+
+/* ─── Icons ────────────────────────────────────────────────────── */
+
+function DotIcon() {
+  return (
+    <span className="inline-block w-2 h-2 rounded-full bg-muted-foreground" />
   );
 }

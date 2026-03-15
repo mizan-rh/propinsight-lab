@@ -1,0 +1,68 @@
+import type { Region } from "@/lib/types";
+
+export const mockRegions: Region[] = [
+    {
+        slug: "manchester",
+        name: "Manchester",
+        coordinates: [53.4808, -2.2426],
+        overallScore: 82,
+        riskLevel: "low",
+        scoreChange: 3.4,
+    },
+    {
+        slug: "birmingham",
+        name: "Birmingham",
+        coordinates: [52.4862, -1.8904],
+        overallScore: 75,
+        riskLevel: "medium",
+        scoreChange: 1.8,
+    },
+    {
+        slug: "leeds",
+        name: "Leeds",
+        coordinates: [53.8008, -1.5491],
+        overallScore: 71,
+        riskLevel: "medium",
+        scoreChange: 2.1,
+    },
+    {
+        slug: "bristol",
+        name: "Bristol",
+        coordinates: [51.4545, -2.5879],
+        overallScore: 78,
+        riskLevel: "low",
+        scoreChange: -0.6,
+    },
+    {
+        slug: "newcastle",
+        name: "Newcastle",
+        coordinates: [54.9783, -1.6178],
+        overallScore: 64,
+        riskLevel: "high",
+        scoreChange: -2.3,
+    },
+    {
+        slug: "liverpool",
+        name: "Liverpool",
+        coordinates: [53.4084, -2.9916],
+        overallScore: 68,
+        riskLevel: "medium",
+        scoreChange: 1.2,
+    },
+    {
+        slug: "sheffield",
+        name: "Sheffield",
+        coordinates: [53.3811, -1.4701],
+        overallScore: 59,
+        riskLevel: "high",
+        scoreChange: -3.1,
+    },
+    {
+        slug: "nottingham",
+        name: "Nottingham",
+        coordinates: [52.9548, -1.1581],
+        overallScore: 73,
+        riskLevel: "low",
+        scoreChange: 4.2,
+    },
+];
